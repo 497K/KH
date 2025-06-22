@@ -196,7 +196,7 @@
     };
 
     document.getElementById('loginBtn').onclick = () => {
-      tokens = tokenInput.value.trim().split('\\n').map(t => t.trim()).filter(t => t);
+      tokens = tokenInput.value.trim().split('\n').map(t => t.trim()).filter(t => t);
       if (tokens.length === 0) return alert('اكتب التوكنات');
       loginSection.classList.add('hidden');
       mainSection.classList.remove('hidden');
