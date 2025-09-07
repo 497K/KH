@@ -747,36 +747,39 @@
       }
     }
 
-    startBtn.onclick = async () => {
-      const channelId = channelInput.value.trim();
-      const mentions = mentionInput.value.split(',').map(id => `<@${id.trim()}>`).join(' ');
-      const delay = parseFloat(delayInput.value) * 1000;
-      const type = sendType.value;
+   startBtn.onclick = async () => {
+  const channelId = channelInput.value.trim();
+  const mentionsRaw = mentionInput.value.trim();
+  const mentions = mentionsRaw
+    ? mentionsRaw.split(',').map(id => `<@${id.trim()}>`).join(' ')
+    : "";
+  const delay = parseFloat(delayInput.value) * 1000;
+  const type = sendType.value;
 
-      if (!channelId) return alert("من فضلك اكتب ID الروم");
+  if (!channelId) return alert("من فضلك اكتب ID الروم");
 
-      stop = false;
-      addSuccessEffect(startBtn);
+  stop = false;
+  addSuccessEffect(startBtn);
 
-      async function loopSend(token) {
-        let index = 0;
-        while (!stop) {
-          let msg;
-          if (type === "random") {
-            msg = `${getRandomMessage()} ${mentions}`.trim();
-          } else {
-            msg = `${getSequentialMessage(index)} ${mentions}`.trim();
-            index++;
-          }
-          await sendMessage(token, channelId, msg);
-          await new Promise(r => setTimeout(r, delay));
-        }
+  async function loopSend(token) {
+    let index = 0;
+    while (!stop) {
+      let msg;
+      if (type === "random") {
+        msg = mentions ? `${getRandomMessage()} ${mentions}` : getRandomMessage();
+      } else {
+        msg = mentions ? `${getSequentialMessage(index)} ${mentions}` : getSequentialMessage(index);
+        index++;
       }
+      await sendMessage(token, channelId, msg);
+      await new Promise(r => setTimeout(r, delay));
+    }
+  }
 
-      tokens.forEach(token => loopSend(token));
-      logBox.innerText += `🔥 بدأ الإرسال   ${tokens.length} .\n`;
-      logBox.scrollTop = logBox.scrollHeight;
-    };
+  tokens.forEach(token => loopSend(token));
+  logBox.innerText += `🔥 بدأ الإرسال   ${tokens.length} .\n`;
+  logBox.scrollTop = logBox.scrollHeight;
+};
 
     stopBtn.onclick = () => {
       stop = true;
