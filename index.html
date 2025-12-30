@@ -2,7 +2,7 @@
 <html lang="ar">
 <head>
   <meta charset="UTF-8">
-  <title>497 - خالد | </title>
+  <title>497</title>
   <link href="https://fonts.googleapis.com/css2?family=Amiri:wght@400;700&family=Cairo:wght@300;400;600;700;900&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
   <style>
@@ -376,12 +376,12 @@
 <body>
   <div class="blood-effect"></div>
   <div class="floating-elements"></div>
-  <div class="background-status" id="backgroundStatus">يعمل في الخلفية 🔴</div>
+  <div class="background-status" id="backgroundStatus">🔴</div>
 
   <div class="container" id="login">
-    <h1 class="luxury-title">🔥 497Group  🔥</h1>
-    <textarea id="tokenInput" placeholder="اكتب التوكنات، كل توكن بسطر منفصل" rows="6"></textarea>
-    <button id="loginBtn"><i class="fas fa-sign-in-alt"></i> تسجيل الدخول</button>
+    <h1 class="luxury-title">497Group</h1>
+    <textarea id="tokenInput" placeholder="اكتب التوكنات، كل توكن بسطر " rows="6"></textarea>
+    <button id="loginBtn"><i class="fas fa-sign-in-alt"></i>الدخول</button>
   </div>
 
   <div class="container hidden" id="main">
@@ -683,11 +683,11 @@
       backgroundTaskActive = active;
       if (active) {
         backgroundStatus.style.display = 'block';
-        logBox.innerText += "🔴 الإرسال يعمل في الخلفية الآن\n";
+        logBox.innerText += "🔴\n";
         logBox.scrollTop = logBox.scrollHeight;
       } else {
         backgroundStatus.style.display = 'none';
-        logBox.innerText += "🟢 توقف العمل في الخلفية\n";
+        logBox.innerText += "🟢\n";
         logBox.scrollTop = logBox.scrollHeight;
       }
     }
@@ -766,7 +766,7 @@
       addSuccessEffect(startBtn);
       updateBackgroundStatus(true);
 
-      logBox.innerText += `🔥 بدأ الإرسال باستخدام ${tokens.length} توكن\n`;
+      logBox.innerText += `بدأ الإرسال باستخدام ${tokens.length} توكن\n`;
       logBox.scrollTop = logBox.scrollHeight;
 
       async function loopSend(token) {
@@ -793,7 +793,7 @@
       addSuccessEffect(stopBtn);
       updateBackgroundStatus(false);
       
-      logBox.innerText += `🛑 تم إيقاف الإرسال\n`;
+      logBox.innerText += `🛑 تم إيقاف \n`;
       logBox.scrollTop = logBox.scrollHeight;
     };
 
